@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Documentación | Security Analysis Suite</title>
+    
+    <style>
+        /* =========================================
+         * 🎨 THEME & BASICS (Original mantenido)
+         * ========================================= */
+        :root {
+            --bg-page: #0B1120;
+            --bg-card: #1E293B;
+            --bg-header: #020617;
+            --border-subtle: #334155;
+            --text-main: #F1F5F9;
+            --text-muted: #94A3B8;
+            --accent-primary: #60A5FA;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --glow: 0 0 25px rgba(96, 165, 250, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            margin: 0;
+            padding-bottom: 80px;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        header {
+            background-color: var(--bg-header);
+            padding: 80px 20px 120px;
+            text-align: center;
+            background-image: radial-gradient(circle at top right, rgba(37, 99, 235, 0.2), transparent 40%);
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+        /* =========================================
+         * 📱 GRID DESIGN
+         * ========================================= */
+        
+        .square-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .section-divider {
+            margin: 60px 0 40px;
+            border: 0;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .section-divider span {
+            background: var(--bg-page);
+            padding: 0 20px;
+            color: var(--accent-primary);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+        }
+
+        .rect-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        /* Estilos de las tarjetas */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .card.square { aspect-ratio: 1 / 1; } 
+        
+        .card.expanded {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 30px rgba(96, 165, 250, 0.15);
+            aspect-ratio: auto; 
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 8px; 
+            margin-bottom: 10px;
+        }
+
+        .card-header h3 {
+            font-size: 1.1rem;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .card-number {
+            background: var(--accent-primary);
+            color: #fff;
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 6px; font-weight: bold; font-size: 0.85rem;
+            flex-shrink: 0; 
+        }
+
+        /* =========================================
+         * ✨ LÓGICA DE EXPANSIÓN
+         * ========================================= */
+        .extra-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            border-top: 1px dashed var(--border-subtle);
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        .card.expanded .extra-content {
+            max-height: 800px;
+            opacity: 1;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+
+        .expand-hint {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--accent-primary);
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+
+        /* =========================================
+         * INTERFAZ & HOTSPOTS
+         * ========================================= */
+        .interface-wrapper {
+            margin-top: -80px;
+            position: relative;
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg), var(--glow);
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+            margin-bottom: 60px;
+        }
+        .tool-wrapper { position: relative; width: 100%; }
+        .tool-image { width: 100%; display: block; opacity: 0.95; }
+        
+        .hotspot {
+            position: absolute;
+            z-index: 10;
+            cursor: pointer;
+            border: 1px dashed rgba(96, 165, 250, 0.4);
+            transition: background 0.2s;
+        }
+        .hotspot:hover { background: rgba(96, 165, 250, 0.2); }
+
+        .tech-details {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: auto;
+        }
+        .tech-list { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+        .tech-list li::before { content: "•"; color: var(--accent-primary); margin-right: 8px; }
+
+        footer { margin-top: 80px; text-align: center; color: var(--text-muted); padding: 40px; border-top: 1px solid var(--border-subtle); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Panel del Analista de Seguridad</h1>
+    <p style="color: var(--text-muted)">Ayuda sencilla para la verificación de correos electrónicos</p>
+</header>
+
+<div class="container">
+
+    <div class="interface-wrapper">
+        <div class="tool-wrapper">
+            <img src="tu-imagen-es.jpg" class="tool-image" alt="Captura de pantalla de la herramienta">
+            
+            <a href="#settings" class="hotspot" style="left: 0%; top: 0%; width: 13%; height: 3%;"></a>
+            <a href="#btn.öff" class="hotspot" style="left: 0%; top: 4%; width: 10%; height: 3%;"></a>
+            <a href="#btn.any" class="hotspot" style="left: 10%; top: 4%; width: 8%; height: 3%;"></a>
+            <a href="#btn.erg" class="hotspot" style="left: 18%; top: 4%; width: 9%; height: 3%;"></a>
+            <a href="#btn.eml" class="hotspot" style="left: 0%; top: 9%; width: 20%; height: 100%;"></a>
+            <a href="#btn.fan" class="hotspot" style="left: 21%; top: 9%; width: 57%; height: 100%;"></a>
+            <a href="#btn.rkp" class="hotspot" style="left: 79%; top: 9%; width: 20%; height: 100%;"></a>
+        </div>
+    </div>
+
+    <div class="square-grid">
+        
+        <div id="settings" class="card square">
+            <div class="card-header"><span class="card-number">1</span><h3>Configuración</h3></div>
+            <p class="description">Aquí puede personalizar la herramienta.</p>
+            <div class="tech-details">
+                <ul class="tech-list">
+                    <li>Diseño, idioma y reglas</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Qué puede hacer aquí:</strong><br>
+                Adapte el programa a sus necesidades. Puede cambiar el diseño a "Claro" u "Oscuro", modificar el idioma o guardar y cargar listas de remitentes permitidos (Whitelist) y bloqueados (Blacklist).
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="btn.öff" class="card square">
+            <div class="card-header"><span class="card-number">2</span><h3>Abrir carpeta</h3></div>
+            <p class="description">Seleccione la ubicación de sus correos.</p>
+            <div class="tech-details">
+                <ul class="tech-list">
+                    <li>Busca archivos .eml</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Cómo funciona:</strong><br>
+                Haga clic aquí para buscar la carpeta en su ordenador donde están guardados los correos sospechosos. La herramienta mostrará todos los correos que encuentre en esa carpeta.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="btn.any" class="card square">
+            <div class="card-header"><span class="card-number">3</span><h3>Iniciar análisis</h3></div>
+            <p class="description">Examinar el correo detalladamente.</p>
+            <div class="tech-details">
+                <ul class="tech-list">
+                    <li>Verifica todas las medidas de seguridad</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>¿Qué sucede aquí?</strong><br>
+                La herramienta lee el correo seleccionado línea por línea. Busca enlaces peligrosos, remitentes falsificados y palabras típicas de fraude. Obtendrá un resultado en pocos segundos.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="btn.erg" class="card square">
+            <div class="card-header"><span class="card-number">4</span><h3>Mostrar resultado</h3></div>
+            <p class="description">Desbloquea la evaluación del riesgo.</p>
+            <div class="tech-details">
+                <ul class="tech-list">
+                    <li>Resumen de los riesgos</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Entender la evaluación:</strong><br>
+                Haga clic en "Revelar resultado" para ver el semáforo:<br>
+                🔴 <b>Atención:</b> ¡Se han detectado muchos indicios de phishing!<br>
+                🟡 <b>Precaución:</b> Algunos elementos parecen sospechosos.<br>
+                🟢 <b>Sin anomalías:</b> No se han encontrado patrones conocidos.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="btn.eml" class="card square">
+            <div class="card-header"><span class="card-number">5</span><h3>Lista de correos</h3></div>
+            <p class="description">Sus mensajes encontrados.</p>
+            <div class="tech-details">
+                <ul class="tech-list">
+                    <li>Arrastre archivos directamente</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Uso:</strong><br>
+                Aquí verá todos los correos de la carpeta seleccionada. También puede arrastrar un archivo de correo desde su ordenador directamente aquí (Drag & Drop) para analizarlo.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="btn.fan" class="card square">
+            <div class="card-header"><span class="card-number">6</span><h3>¿Por qué es así?</h3></div>
+            <p class="description">La justificación del análisis.</p>
+            <div class="tech-details">
+                <ul class="tech-list">
+                    <li>Detalles de cada escáner</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Pistas encontradas:</strong><br>
+                Aquí el programa detalla exactamente qué ha detectado. Por ejemplo: "Se han identificado palabras clave" o "La dirección de respuesta no coincide con el remitente". Esto le ayuda a entender por qué un correo se considera peligroso.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="btn.rkp" class="card square">
+            <div class="card-header"><span class="card-number">7</span><h3>Consejos de conducta</h3></div>
+            <p class="description">Qué debe hacer ahora.</p>
+            <div class="tech-details">
+                <ul class="tech-list">
+                    <li>Recomendaciones de seguridad</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Recomendaciones en caso de peligro:</strong><br>
+                • No haga clic directamente en los enlaces.<br>
+                • No abra archivos adjuntos si no los esperaba.<br>
+                • No realice ningún pago.<br>
+                • En caso de duda, informe al equipo de seguridad informática o contacte al remitente por otra vía (teléfono).
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+    </div>
+    
+
+    <div class="section-divider">
+        <span>Los escáneres (¿Qué se comprueba?)</span>
+    </div>
+
+    <div class="rect-grid">
+        
+        <div id="scan.phish" class="card">
+            <div class="card-header"><span class="card-number">S1</span><h3>Verificación de remitente (Phishing)</h3></div>
+            <p class="description">Verifica si el remitente es auténtico.</p>
+            <div class="tech-details">
+                <strong>Advertencias importantes:</strong>
+                <ul class="tech-list">
+                    <li>Suplantación de identidad (Spoofing)</li>
+                    <li>Direcciones de respuesta falsas</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Explicación sencilla:</strong><br>
+                Este escáner analiza los detalles técnicos del correo. Verifica si la dirección a la que iría una respuesta pertenece realmente al remitente. Si hay diferencias, es un indicio claro de fraude.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="scan.url" class="card">
+            <div class="card-header"><span class="card-number">S2</span><h3>Verificación de enlaces (URL)</h3></div>
+            <p class="description">Verifica todos los enlaces de internet en el correo.</p>
+            <div class="tech-details">
+                <strong>Advertencias importantes:</strong>
+                <ul class="tech-list">
+                    <li>Destinos ocultos (Acortadores)</li>
+                    <li>Nombres engañosamente similares</li>
+                    <li>Listas de sitios web peligrosos</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Explicación sencilla:</strong><br>
+                Los estafadores suelen usar trucos para que los enlaces parezcan inofensivos. El escáner detecta si los enlaces han sido acortados para camuflar el destino o si se han cambiado letras (ej. 'rn' en lugar de 'm') para imitar nombres de empresas conocidas.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="scan.read" class="card">
+            <div class="card-header"><span class="card-number">S3</span><h3>Verificación de texto (Legibilidad)</h3></div>
+            <p class="description">Verifica cómo está redactado el correo.</p>
+            <div class="tech-details">
+                <strong>Advertencias importantes:</strong>
+                <ul class="tech-list">
+                    <li>Textos extremadamente cortos</li>
+                    <li>Oraciones muy simples</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Explicación sencilla:</strong><br>
+                Muchos correos de phishing se crean automáticamente o se traducen mal. Si un correo es llamativamente corto o consiste solo en oraciones extremadamente simples y entrecortadas, este escáner activa la alarma.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="scan.iban" class="card">
+            <div class="card-header"><span class="card-number">S5</span><h3>Verificación de cuenta (IBAN)</h3></div>
+            <p class="description">Verifica los datos bancarios incluidos.</p>
+            <div class="tech-details">
+                <strong>Advertencias importantes:</strong>
+                <ul class="tech-list">
+                    <li>IBAN encontrado</li>
+                    <li>País de origen del banco</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Explicación sencilla:</strong><br>
+                Las solicitudes de pago son típicas del fraude. La herramienta localiza números de cuenta (IBAN) en el texto y le recuerda que los verifique bien. También comprueba si el país del banco coincide con el supuesto remitente.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+        <div id="scan.key" class="card">
+            <div class="card-header"><span class="card-number">S6</span><h3>Verificación de palabras (Keywords)</h3></div>
+            <p class="description">Busca palabras típicas de fraude.</p>
+            <div class="tech-details">
+                <strong>Advertencias importantes:</strong>
+                <ul class="tech-list">
+                    <li>Palabras como: Factura, Bloqueado, Contraseña, Login</li>
+                </ul>
+            </div>
+            <div class="extra-content">
+                <strong>Explicación sencilla:</strong><br>
+                Este escáner busca palabras que se utilizan a menudo para generar presión o miedo. Términos como "Verificar de inmediato", "Cuenta bloqueada" o "Pago pendiente" aumentan la calificación de riesgo.
+            </div>
+            <span class="expand-hint">Clic para detalles</span>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Security Operations Toolset. Documentación para usuarios.</p>
+    </footer>
+
+</div>
+
+<script>
+    // Función para alternar la expansión de las tarjetas
+    function toggleCard(cardId) {
+        const id = cardId.replace('#', '');
+        const card = document.getElementById(id);
+        
+        if (card) {
+            card.classList.toggle('expanded');
+            
+            if(card.classList.contains('expanded')) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
+
+    // Event Listener para clics en tarjetas
+    document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('click', () => {
+            const id = card.getAttribute('id');
+            if(id) toggleCard(id);
+        });
+    });
+
+    // Event Listener para clics en hotspots
+    document.querySelectorAll('.hotspot').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href');
+            toggleCard(targetId);
+        });
+    });
+</script>
+
+</body>
+</html>

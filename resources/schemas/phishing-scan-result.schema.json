@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/phishing-scan-result.schema.json",
+  "title": "Phishing Scan Result",
+  "description": "Standardisiertes Ergebnis eines E-Mail-Phishing-Scans",
+  "type": "object",
+
+  "required": [
+    "subject",
+    "from",
+    "risk",
+    "totalScore",
+    "scanners"
+  ],
+
+  "properties": {
+    "subject": {
+      "type": "string",
+      "description": "Betreff der E-Mail"
+    },
+
+    "from": {
+      "type": "string",
+      "description": "Absender der E-Mail"
+    },
+
+    "risk": {
+      "type": "string",
+      "enum": ["GRUEN", "GELB", "ROT"],
+      "description": "Risikoeinstufung der E-Mail"
+    },
+
+    "totalScore": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Gesamtscore aller Scanner"
+    },
+
+    "scanners": {
+      "type": "array",
+      "description": "Einzelergebnisse aller Scanner",
+      "items": {
+        "type": "object",
+        "required": ["name", "score", "findings"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name des Scanners"
+          },
+
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Score dieses Scanners"
+          },
+
+          "findings": {
+            "type": "array",
+            "description": "Begründungen des Scanners",
+            "items": {
+              "type": "object",
+              "required": ["message"],
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Beschreibung des Findings"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

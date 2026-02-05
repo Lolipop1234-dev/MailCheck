@@ -1,0 +1,7 @@
+passwort
+konto
+zahlung
+rechnung
+überweisung
+login
+verifizieren
